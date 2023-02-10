@@ -8,26 +8,51 @@ import java.math.BigDecimal;
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) {
-        RewardRepository myProxy = TransactionalProxy.newInstance(new StubRewardRepositoryImpl());
+    public static void main(String[] args) throws InterruptedException {
+        AccountService transactionalProxy = TransactionalProxy.newInstance(new StubAccountServiceImpl());
         AccountId accountId = new AccountId(465345);
 
+
+        // Annotated so will run in a transaction and will be committed
+        transactionalProxy.credit(accountId, BigDecimal.valueOf(60));
+
+        LOGGER.info("--------------------------------");
+
+        // Not annotated so will not run in a transaction
+        transactionalProxy.getBalance(accountId);
+
+        LOGGER.info("--------------------------------");
+
+        // Annotated but throws exception so there will be a rollback
         try {
-
-            // Annotated so will run in a transaction and will be committed
-            BigDecimal credit = myProxy.credit(accountId, BigDecimal.valueOf(60));
-
-            // Not annotated so will not run in a transaction
-            BigDecimal balance = myProxy.getBalance(accountId);
-
-            // Annotated but throws exception so there will be a rollback
-            BigDecimal debit = myProxy.debit(accountId, BigDecimal.valueOf(40));
-
-            // Show how Transaction is not started when not passing the proxy boundary
-            myProxy.generateReports(accountId);
-
+            transactionalProxy.debit(accountId, BigDecimal.valueOf(40));
         } catch (Exception e) {
             LOGGER.error("{}", e.getCause().getCause().getMessage());
         }
+
+        LOGGER.info("--------------------------------");
+
+
+        // Show how Transaction is not started when not passing the proxy boundary
+        transactionalProxy.generateReports(accountId);
+
+
+        LOGGER.info("--------------------------------");
+
+
+        Thread.sleep(200); // add some delay so logs don't mix
+
+        // A bean can be wrapped in proxy's multiple times. Proxy in proxy
+        AccountService transactionalCachingProxy = CachingProxy.newInstance(transactionalProxy);
+
+        // Fetch the same account twice. One should result from cache
+        Account account1 = transactionalCachingProxy.get(accountId);
+
+        LOGGER.info("--------------------------------");
+
+        // As a result of the method not being invokes, also no transactions will be started
+        Account account2 = transactionalCachingProxy.get(accountId);
+
+        LOGGER.info("Both objects have the same reference because of caching: {}", account1 == account2);
     }
 }

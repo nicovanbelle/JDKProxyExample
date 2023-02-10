@@ -2,7 +2,7 @@ package org.example;
 
 import java.math.BigDecimal;
 
-public interface RewardRepository {
+public interface AccountService {
     BigDecimal credit(AccountId accountId, BigDecimal amount);
 
     BigDecimal debit(AccountId accountId, BigDecimal amount);
@@ -12,4 +12,6 @@ public interface RewardRepository {
     void generateReports(AccountId accountId);
 
     void internalTargetCall();
+
+    Account get(AccountId accountId);
 }

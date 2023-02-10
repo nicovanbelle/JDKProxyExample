@@ -5,18 +5,18 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 
-public class StubRewardRepositoryImpl implements RewardRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StubRewardRepositoryImpl.class);
+public class StubAccountServiceImpl implements AccountService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(StubAccountServiceImpl.class);
 
     @Override
-    @RunInTransaction
+    @Transactional
     public BigDecimal credit(AccountId accountId, BigDecimal amount) {
         LOGGER.info("Crediting account #{} for an amount of {}", accountId.accountId(), amount);
         return BigDecimal.TEN;
     }
 
     @Override
-    @RunInTransaction
+    @Transactional
     public BigDecimal debit(AccountId accountId, BigDecimal amount) {
         LOGGER.info("Debiting account {} for an amount of {}", accountId, amount);
         throw new RuntimeException("Could not debit account #" + accountId);
@@ -34,8 +34,15 @@ public class StubRewardRepositoryImpl implements RewardRepository {
     }
 
     @Override
-    @RunInTransaction
+    @Transactional
     public void internalTargetCall() {
-        LOGGER.info("This should run in a transaction!");
+        LOGGER.info("This should run in a transaction! But the proxy isn't aware..");
+    }
+
+    @Cacheable
+    @Transactional
+    public Account get(AccountId accountId) {
+        LOGGER.info("Fetching account with id {}", accountId);
+        return new Account(accountId, new AccountOwner("Jane", "Doe"));
     }
 }

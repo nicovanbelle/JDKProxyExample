@@ -7,7 +7,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-public class TransactionalProxy implements InvocationHandler {
+public class TransactionalProxy implements InvocationHandler, ApplicationProxy {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionalProxy.class);
     private final Object target;
     private final TransactionManager transactionManager;
@@ -19,9 +19,8 @@ public class TransactionalProxy implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        LOGGER.info("");
         LOGGER.info("Proxy method {} has been invoked with arguments {}", method.getName(), args);
-        if (!targetMethod(method).isAnnotationPresent(RunInTransaction.class)) {
+        if (!targetMethod(method).isAnnotationPresent(Transactional.class)) {
             return method.invoke(target, args);
         }
 
@@ -37,6 +36,12 @@ public class TransactionalProxy implements InvocationHandler {
     }
 
     private Method targetMethod(Method method) throws NoSuchMethodException {
+        // is already a proxy
+        if (Proxy.isProxyClass(target.getClass())
+                && Proxy.getInvocationHandler(target) instanceof ApplicationProxy appProxy) {
+            return appProxy.getTarget().getClass().getMethod(method.getName(), method.getParameterTypes());
+        }
+        // is not a proxy
         return target.getClass().getMethod(method.getName(), method.getParameterTypes());
     }
 
@@ -47,10 +52,15 @@ public class TransactionalProxy implements InvocationHandler {
      * What argument or return types or does a method have?
      * Can also be used to instantiate objects, set private fields, etc.
      */
-    public static RewardRepository newInstance(Object obj) {
-        return (RewardRepository) Proxy.newProxyInstance(
+    public static AccountService newInstance(Object obj) {
+        return (AccountService) Proxy.newProxyInstance(
                 obj.getClass().getClassLoader(),
                 obj.getClass().getInterfaces(),
                 new TransactionalProxy(obj));
+    }
+
+    @Override
+    public Object getTarget() {
+        return target;
     }
 }
