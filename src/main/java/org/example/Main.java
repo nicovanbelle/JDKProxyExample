@@ -51,7 +51,7 @@ public class Main {
 
         LOGGER.info("--------------------------------");
 
-        // As a result of the method not being invokes, also no transactions will be started
+        // As a result of the method not being invoked due to the caching, also no transactions will be started
         Account account2 = transactionalCachingProxy.get(accountId);
 
         LOGGER.info("Both objects have the same reference because of caching: {}", account1 == account2);
