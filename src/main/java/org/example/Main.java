@@ -32,15 +32,10 @@ public class Main {
 
         LOGGER.info("--------------------------------");
 
-
         // Show how Transaction is not started when not passing the proxy boundary
         transactionalProxy.generateReports(accountId);
 
-
         LOGGER.info("--------------------------------");
-
-
-        Thread.sleep(200); // add some delay so logs don't mix
 
         // A bean can be wrapped in proxy's multiple times. Proxy in proxy
         AccountService transactionalCachingProxy = CachingProxy.newInstance(transactionalProxy);
