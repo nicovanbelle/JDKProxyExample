@@ -1,5 +1,7 @@
-package org.example;
+package org.example.proxy;
 
+import org.example.annotation.Transactional;
+import org.example.domain.account.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,5 +64,21 @@ public class TransactionalProxy implements InvocationHandler, ApplicationProxy {
     @Override
     public Object getTarget() {
         return target;
+    }
+
+    private static class  TransactionManager {
+        private static final Logger LOGGER = LoggerFactory.getLogger(TransactionManager.class);
+
+        public void start() {
+            LOGGER.info("---> Starting Transaction");
+        }
+
+        public void commit() {
+            LOGGER.info("---> Commit Transaction");
+        }
+
+        public void rollback() {
+            LOGGER.info("---> Rollback Transaction");
+        }
     }
 }

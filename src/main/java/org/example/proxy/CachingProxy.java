@@ -1,5 +1,7 @@
-package org.example;
+package org.example.proxy;
 
+import org.example.domain.account.AccountService;
+import org.example.annotation.Cacheable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

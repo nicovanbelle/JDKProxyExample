@@ -1,5 +1,11 @@
 package org.example;
 
+import org.example.domain.account.Account;
+import org.example.domain.account.AccountId;
+import org.example.domain.account.AccountService;
+import org.example.domain.account.AccountServiceImpl;
+import org.example.proxy.CachingProxy;
+import org.example.proxy.TransactionalProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +15,7 @@ public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws InterruptedException {
-        AccountService transactionalProxy = TransactionalProxy.newInstance(new StubAccountServiceImpl());
+        AccountService transactionalProxy = TransactionalProxy.newInstance(new AccountServiceImpl());
         AccountId accountId = new AccountId(465345);
 
 
