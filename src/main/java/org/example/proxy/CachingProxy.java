@@ -1,6 +1,5 @@
 package org.example.proxy;
 
-import org.example.domain.account.AccountService;
 import org.example.annotation.Cacheable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +13,10 @@ import java.util.stream.Collectors;
 
 public class CachingProxy implements InvocationHandler, ApplicationProxy {
     private static final Logger LOGGER = LoggerFactory.getLogger(CachingProxy.class);
+
+    /**
+     *
+     */
     private final Object target;
     private final ConcurrentHashMap<Object, Object> cache;
 
@@ -40,13 +43,19 @@ public class CachingProxy implements InvocationHandler, ApplicationProxy {
         });
     }
 
+    /**
+     * Return the method of the target as this is the one that is annotated.
+     * The methods of the proxy are not annotated.
+     * As multiple proxies can be wrapped we need to loop until we find the class that's not a proxy itself.
+     */
     private Method targetMethod(Method method) throws NoSuchMethodException {
-        // is already a proxy
-        if (Proxy.isProxyClass(target.getClass()) && Proxy.getInvocationHandler(target) instanceof ApplicationProxy appProxy) {
-            return appProxy.getTarget().getClass().getMethod(method.getName(), method.getParameterTypes());
+        Class<?> targetClass = target.getClass();
+        Object wrappedTarget = target;
+        while (Proxy.isProxyClass(targetClass) && Proxy.getInvocationHandler(wrappedTarget) instanceof ApplicationProxy appProxy) {
+            targetClass = appProxy.getTarget().getClass();
+            wrappedTarget = appProxy.getTarget();
         }
-        // is not a proxy
-        return target.getClass().getMethod(method.getName(), method.getParameterTypes());
+        return targetClass.getMethod(method.getName(), method.getParameterTypes());
     }
 
     private static String cacheKeyFromArguments(Object[] args) {
@@ -58,8 +67,8 @@ public class CachingProxy implements InvocationHandler, ApplicationProxy {
     /*
      * Proxy is part of the Java Reflection library.
      */
-    public static AccountService newInstance(Object obj) {
-        return (AccountService) Proxy.newProxyInstance(
+    public static <T> T newInstance(Object obj) {
+        return (T) Proxy.newProxyInstance(
                 obj.getClass().getClassLoader(),
                 obj.getClass().getInterfaces(),
                 new CachingProxy(obj));

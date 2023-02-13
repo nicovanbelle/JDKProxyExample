@@ -1,7 +1,6 @@
 package org.example.proxy;
 
 import org.example.annotation.Transactional;
-import org.example.domain.account.AccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +36,19 @@ public class TransactionalProxy implements InvocationHandler, ApplicationProxy {
         }
     }
 
+    /**
+     * Return the method of the target as this is the one that is annotated.
+     * The methods of the proxy are not annotated.
+     * As multiple proxies can be wrapped we need to loop until we find the class that's not a proxy itself.
+     */
     private Method targetMethod(Method method) throws NoSuchMethodException {
-        // is already a proxy
-        if (Proxy.isProxyClass(target.getClass())
-                && Proxy.getInvocationHandler(target) instanceof ApplicationProxy appProxy) {
-            return appProxy.getTarget().getClass().getMethod(method.getName(), method.getParameterTypes());
+        Class<?> targetClass = target.getClass();
+        Object wrappedTarget = target;
+        while (Proxy.isProxyClass(targetClass) && Proxy.getInvocationHandler(wrappedTarget) instanceof ApplicationProxy appProxy) {
+            targetClass = appProxy.getTarget().getClass();
+            wrappedTarget = appProxy.getTarget();
         }
-        // is not a proxy
-        return target.getClass().getMethod(method.getName(), method.getParameterTypes());
+        return targetClass.getMethod(method.getName(), method.getParameterTypes());
     }
 
     /*
@@ -54,8 +58,8 @@ public class TransactionalProxy implements InvocationHandler, ApplicationProxy {
      * What argument or return types or does a method have?
      * Can also be used to instantiate objects, set private fields, etc.
      */
-    public static AccountService newInstance(Object obj) {
-        return (AccountService) Proxy.newProxyInstance(
+    public static<T> T newInstance(Object obj) {
+        return (T) Proxy.newProxyInstance(
                 obj.getClass().getClassLoader(),
                 obj.getClass().getInterfaces(),
                 new TransactionalProxy(obj));
